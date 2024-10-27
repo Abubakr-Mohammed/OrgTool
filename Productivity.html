@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Time Management Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        #calendar {
+            margin-bottom: 40px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .notes-section, .reminders {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"], textarea, input[type="datetime-local"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .reminder-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #00c6fb 0%, #005bea 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .reminder-popup h3 {
+            margin-top: 0;
+            font-size: 18px;
+        }
+
+        .reminder-popup p {
+            margin-bottom: 15px;
+        }
+
+        .reminder-popup button {
+            background-color: white;
+            color: #005bea;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .reminder-popup button:hover {
+            background-color: #f0f0f0;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .context-menu {
+            display: none;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .context-menu ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .context-menu ul li {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .context-menu ul li:hover {
+            background-color: #f0f0f0;
+        }
+
+        #logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+            z-index: 1000; /* Ensure it's above other content */
+        }
+        #logout-btn:hover {
+            background-color: #5a6fd6;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 300px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .modal-buttons {
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            margin: 0 10px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .confirm-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .cancel-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        .container > div {
+            margin-bottom: 30px;
+        }
+        #classes-section, #reminders-section, #notes-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 300px;
+            border-radius: 8px;
+        }
+
+        #eventForm input, #eventForm button {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        #deleteEventBtn {
+            background-color: #f44336;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 300px;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        #eventForm input, #eventForm button, #eventForm select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        #eventColor {
+            height: 40px;
+        }
+
+        #deleteEventBtn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        #setReminderBtn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        #reminderTime {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        #classes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 0;
+            list-style-type: none;
+        }
+
+        .class-frame {
+            width: calc(33.333% - 10px);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .class-frame:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .class-frame h3 {
+            margin: 0;
+            color: #333;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .class-frame {
+                width: calc(50% - 7.5px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .class-frame {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="logout-btn">Logout</button>
+    <div class="container">
+        <h1>Student Time Management Dashboard</h1>
+        
+        <div id="calendar"></div>
+
+        <div id="classes-section">
+            <h2>Classes</h2>
+            <div id="class-list">
+                <input type="text" id="class-input" placeholder="Enter class name">
+                <button onclick="addClass()">Add Class</button>
+                <p id="class-count">Classes: 0/5</p>
+            </div>
+            <ul id="classes"></ul>
+        </div>
+
+        <div id="reminders-section">
+            <h2>Reminders</h2>
+            <input type="text" id="reminder-text" placeholder="Reminder text">
+            <input type="datetime-local" id="reminder-date">
+            <button onclick="addReminder()">Add Reminder</button>
+            <ul id="reminders-list"></ul>
+        </div>
+    </div>
+
+    <div id="reminderPopup" class="reminder-popup">
+        <h3>Reminder</h3>
+        <p id="reminderText"></p>
+        <button onclick="dismissReminder()">Dismiss</button>
+    </div>
+
+    <div id="contextMenu" class="context-menu">
+        <ul>
+            <li id="changeColor">Change Color</li>
+        </ul>
+    </div>
+
+    <div id="logoutModal" class="modal">
+        <div class="modal-content">
+            <h2>Confirm Logout</h2>
+            <p>Are you sure you want to log out?</p>
+            <div class="modal-buttons">
+                <button id="confirmLogout" class="confirm-btn">Yes, Log out</button>
+                <button id="cancelLogout" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Event Details</h2>
+            <form id="eventForm">
+                <div class="form-group">
+                    <input type="text" id="eventTitle" placeholder="Event Title" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventStart">From:</label>
+                    <input type="datetime-local" id="eventStart" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventEnd">To:</label>
+                    <input type="datetime-local" id="eventEnd" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventColor">Color:</label>
+                    <input type="color" id="eventColor" value="#3788d8">
+                </div>
+                <button type="submit">Save Event</button>
+            </form>
+            <button id="deleteEventBtn">Delete Event</button>
+            <div class="form-group">
+                <select id="reminderTime">
+                    <option value="5">5 minutes before</option>
+                    <option value="15">15 minutes before</option>
+                    <option value="30">30 minutes before</option>
+                    <option value="60">1 hour before</option>
+                </select>
+                <button id="setReminderBtn">Set Reminder</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let calendar;
+        let currentUser;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            initializeCalendar();
+            displayUserData();
+        });
+
+        function loadUserData() {
+            currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                window.location.href = 'login.html';
+            } else {
+                classes = currentUser.classes || [];
+                updateClassList();
+                // ... load other user data ...
+            }
+        }
+
+        function displayUserData() {
+            if (currentUser) {
+                // Display classes
+                const classesList = document.getElementById('classes-list');
+                classesList.innerHTML = '';
+                currentUser.classes.forEach(className => {
+                    const li = document.createElement('li');
+                    li.textContent = className;
+                    classesList.appendChild(li);
+                });
+
+                // Display notes
+                const notesList = document.getElementById('notes-list');
+                notesList.innerHTML = '';
+                currentUser.notes.forEach(note => {
+                    const li = document.createElement('li');
+                    li.textContent = note.content;
+                    notesList.appendChild(li);
+                });
+
+                // Display reminders
+                const remindersList = document.getElementById('reminders-list');
+                remindersList.innerHTML = '';
+                currentUser.reminders.forEach(reminder => {
+                    const li = document.createElement('li');
+                    li.textContent = `${reminder.text} - ${new Date(reminder.date).toLocaleString()}`;
+                    remindersList.appendChild(li);
+                });
+
+                // Display calendar events (handled by FullCalendar)
+            }
+        }
+
+        let classes = [];
+        const MAX_CLASSES = 5;
+        const colors = [
+            '#FF9AA2', '#FFB7B2', '#FFDAC1', '#E2F0CB', '#B5EAD7',
+            '#C7CEEA', '#F0E6EF', '#D4F0F0', '#FFC3A0', '#FFA07A'
+        ];
+
+        function addClass() {
+            if (classes.length >= MAX_CLASSES) {
+                alert('Maximum of 5 classes per semester reached.');
+                return;
+            }
+
+            const classInput = document.getElementById('class-input');
+            const className = classInput.value.trim();
+
+            if (className) {
+                const availableColors = colors.filter(color => !classes.some(cls => cls.color === color));
+                const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+                classes.push({ name: className, notes: '', color: randomColor });
+                updateClassList();
+                classInput.value = '';
+                saveUserData();
+            }
+        }
+
+        function updateClassList() {
+            const classesList = document.getElementById('classes');
+            const classCount = document.getElementById('class-count');
+            classesList.innerHTML = '';
+
+            classes.forEach((cls, index) => {
+                const classFrame = document.createElement('div');
+                classFrame.className = 'class-frame';
+                classFrame.style.backgroundColor = cls.color;
+                
+                const className = document.createElement('h3');
+                className.textContent = cls.name;
+                
+                classFrame.appendChild(className);
+                classFrame.onclick = () => openNotes(index);
+                classFrame.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    showContextMenu(e, index);
+                };
+                classesList.appendChild(classFrame);
+            });
+
+            classCount.textContent = `Classes: ${classes.length}/${MAX_CLASSES}`;
+
+            const classInput = document.getElementById('class-input');
+            const addClassButton = document.querySelector('#class-list button');
+            if (classes.length >= MAX_CLASSES) {
+                classInput.style.display = 'none';
+                addClassButton.style.display = 'none';
+            } else {
+                classInput.style.display = 'inline-block';
+                addClassButton.style.display = 'inline-block';
+            }
+        }
+
+        function showContextMenu(e, index) {
+            const contextMenu = document.getElementById('contextMenu');
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = `${e.pageX}px`;
+            contextMenu.style.top = `${e.pageY}px`;
+            
+            const changeColorOption = document.getElementById('changeColor');
+            changeColorOption.onclick = () => changeClassColor(index);
+            
+            document.addEventListener('click', hideContextMenu);
+        }
+
+        function hideContextMenu() {
+            const contextMenu = document.getElementById('contextMenu');
+            contextMenu.style.display = 'none';
+            document.removeEventListener('click', hideContextMenu);
+        }
+
+        function changeClassColor(index) {
+            const availableColors = colors.filter(color => !classes.some(cls => cls.color === color));
+            if (availableColors.length > 0) {
+                const newColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+                classes[index].color = newColor;
+                updateClassList();
+                saveUserData();
+            } else {
+                alert('No more unique colors available.');
+            }
+        }
+
+        // Function to add a note
+        function addNote() {
+            const noteContent = document.getElementById('note-input').value;
+            if (noteContent) {
+                currentUser.notes.push({ id: Date.now(), content: noteContent });
+                updateUserData();
+                displayUserData();
+                document.getElementById('note-input').value = '';
+            }
+        }
+
+        // Function to add a reminder
+        function addReminder() {
+            const reminderText = document.getElementById('reminder-text').value;
+            const reminderDate = document.getElementById('reminder-date').value;
+            if (reminderText && reminderDate) {
+                currentUser.reminders.push({ id: Date.now(), text: reminderText, date: reminderDate });
+                updateUserData();
+                displayUserData();
+                document.getElementById('reminder-text').value = '';
+                document.getElementById('reminder-date').value = '';
+            }
+        }
+
+        function updateUserData() {
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            let users = JSON.parse(localStorage.getItem('users')) || [];
+            const index = users.findIndex(u => u.email === currentUser.email);
+            if (index !== -1) {
+                users[index] = currentUser;
+                localStorage.setItem('users', JSON.stringify(users));
+            }
+        }
+
+        function initializeCalendar() {
+            var calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: currentUser.calendarEvents || [],
+                editable: true,
+                selectable: true,
+                select: function(info) {
+                    showEventModal('add', info);
+                },
+                eventClick: function(info) {
+                    showEventModal('edit', info);
+                },
+                eventAdd: function(info) {
+                    saveUserData();
+                },
+                eventChange: function(info) {
+                    saveUserData();
+                },
+                eventRemove: function(info) {
+                    saveUserData();
+                }
+            });
+            calendar.render();
+        }
+
+        function showEventModal(mode, info) {
+            const modal = document.getElementById('eventModal');
+            const form = document.getElementById('eventForm');
+            const deleteBtn = document.getElementById('deleteEventBtn');
+            const colorPicker = document.getElementById('eventColor');
+            const closeBtn = modal.querySelector('.close');
+
+            if (mode === 'add') {
+                form.reset();
+                deleteBtn.style.display = 'none';
+                document.getElementById('eventTitle').value = '';
+                document.getElementById('eventStart').value = info.startStr;
+                document.getElementById('eventEnd').value = info.endStr;
+            } else {
+                deleteBtn.style.display = 'inline-block';
+                document.getElementById('eventTitle').value = info.event.title;
+                document.getElementById('eventStart').value = info.event.startStr;
+                document.getElementById('eventEnd').value = info.event.endStr;
+                colorPicker.value = info.event.backgroundColor || '#3788d8';
+            }
+
+            modal.style.display = 'block';
+
+            // Close modal when clicking on 'x'
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            }
+
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
+            form.onsubmit = function(e) {
+                e.preventDefault();
+                const title = document.getElementById('eventTitle').value;
+                const start = document.getElementById('eventStart').value;
+                const end = document.getElementById('eventEnd').value;
+                const color = colorPicker.value;
+
+                if (mode === 'add') {
+                    calendar.addEvent({
+                        title: title,
+                        start: start,
+                        end: end,
+                        backgroundColor: color,
+                        borderColor: color
+                    });
+                } else {
+                    info.event.remove();
+                    calendar.addEvent({
+                        title: title,
+                        start: start,
+                        end: end,
+                        backgroundColor: color,
+                        borderColor: color
+                    });
+                }
+
+                modal.style.display = 'none';
+                saveUserData();
+            };
+
+            deleteBtn.onclick = function() {
+                if (confirm('Are you sure you want to delete this event?')) {
+                    info.event.remove();
+                    modal.style.display = 'none';
+                    saveUserData();
+                }
+            };
+
+            document.getElementById('setReminderBtn').onclick = function() {
+                const reminderTime = document.getElementById('reminderTime').value;
+                if (reminderTime) {
+                    setEventReminder(info.event, reminderTime);
+                    alert('Reminder set successfully!');
+                } else {
+                    alert('Please select a reminder time.');
+                }
+            };
+        }
+
+        function setEventReminder(event, reminderTime) {
+            const eventTime = new Date(event.start).getTime();
+            const currentTime = new Date().getTime();
+            const timeUntilEvent = eventTime - currentTime;
+            const reminderOffset = parseInt(reminderTime) * 60 * 1000; // Convert minutes to milliseconds
+            const timeUntilReminder = timeUntilEvent - reminderOffset;
+
+            if (timeUntilReminder > 0) {
+                setTimeout(function() {
+                    showReminderPopup(event.title);
+                }, timeUntilReminder);
+            }
+        }
+
+        var contextMenu = document.getElementById('contextMenu');
+        var editEventOption = document.getElementById('editEvent');
+        var changeColorOption = document.getElementById('changeColor');
+        var deleteEventOption = document.getElementById('deleteEvent');
+        var clickedEvent;
+
+        function showContextMenu(e, event) {
+            e.preventDefault();
+            clickedEvent = event;
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = e.pageX + 'px';
+            contextMenu.style.top = e.pageY + 'px';
+        }
+
+        document.addEventListener('click', function() {
+            contextMenu.style.display = 'none';
+        });
+
+        editEventOption.addEventListener('click', function() {
+            var newTitle = prompt('Edit event title:', clickedEvent.title);
+            if (newTitle) {
+                clickedEvent.setProp('title', newTitle);
+                saveUserData();
+            }
+        });
+
+        changeColorOption.addEventListener('click', function() {
+            var colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+            var newColor = colors[Math.floor(Math.random() * colors.length)];
+            clickedEvent.setProp('backgroundColor', newColor);
+            saveUserData();
+        });
+
+        deleteEventOption.addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete this event?')) {
+                clickedEvent.remove();
+                saveUserData();
+            }
+        });
+
+        const logoutBtn = document.getElementById('logout-btn');
+        const logoutModal = document.getElementById('logoutModal');
+        const confirmLogoutBtn = document.getElementById('confirmLogout');
+        const cancelLogoutBtn = document.getElementById('cancelLogout');
+
+        logoutBtn.addEventListener('click', function() {
+            logoutModal.style.display = 'block';
+        });
+
+        cancelLogoutBtn.addEventListener('click', function() {
+            logoutModal.style.display = 'none';
+        });
+
+        confirmLogoutBtn.addEventListener('click', function() {
+            console.log('Logout confirmed');
+            saveUserData();
+            localStorage.removeItem('currentUser');
+            alert('You have been logged out.');
+            console.log('Redirecting to login.html');
+            window.location.href = 'login.html';
+        });
+
+        // Close the modal if user clicks outside of it
+        window.onclick = function(event) {
+            if (event.target == logoutModal) {
+                logoutModal.style.display = 'none';
+            }
+        }
+
+        function saveUserData() {
+            if (currentUser) {
+                currentUser.calendarEvents = calendar.getEvents().map(e => ({
+                    title: e.title,
+                    start: e.start,
+                    end: e.end,
+                    allDay: e.allDay,
+                    backgroundColor: e.backgroundColor,
+                    borderColor: e.borderColor
+                }));
+                currentUser.classes = classes;
+                currentUser.reminders = getReminders();
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                // Update user data in the users array
+                let users = JSON.parse(localStorage.getItem('users')) || [];
+                const userIndex = users.findIndex(u => u.email === currentUser.email);
+                if (userIndex !== -1) {
+                    users[userIndex] = currentUser;
+                    localStorage.setItem('users', JSON.stringify(users));
+                }
+            }
+        }
+
+        function getReminders() {
+            // This should return the current reminders from your application state
+            // For now, we'll just return the reminders from currentUser
+            return currentUser.reminders || [];
+        }
+
+        function getRandomColor() {
+            const colors = [
+                '#FF9AA2', '#FFB7B2', '#FFDAC1', '#E2F0CB', '#B5EAD7',
+                '#C7CEEA', '#F0E6EF', '#D4F0F0', '#FFC3A0', '#FFA07A'
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function openNotes(index) {
+            const cls = classes[index];
+            const notesHtml = `
+                <h3>${cls.name} Notes</h3>
+                <textarea id="notes-input" rows="10" cols="50">${cls.notes}</textarea>
+                <br>
+                <button onclick="saveNotes(${index})">Save Notes</button>
+                <button onclick="deleteClass(${index})">Delete Class</button>
+                <button onclick="backToClasses()">Back to Classes</button>
+            `;
+
+            document.getElementById('class-list').style.display = 'none';
+            document.getElementById('classes').innerHTML = notesHtml;
+        }
+
+        function backToClasses() {
+            document.getElementById('class-list').style.display = 'block';
+            updateClassList();
+        }
+
+        function saveNotes(index) {
+            const notesInput = document.getElementById('notes-input');
+            classes[index].notes = notesInput.value;
+            alert('Notes saved successfully!');
+            saveUserData();
+        }
+
+        function deleteClass(index) {
+            if (confirm('Are you sure you want to delete this class and its notes?')) {
+                classes.splice(index, 1);
+                backToClasses();
+                saveUserData();
+            }
+        }
+
+        function setReminder() {
+            var reminderInput = document.getElementById('reminder-input');
+            var reminderTimeInput = document.getElementById('reminder-time');
+            var reminderText = reminderInput.value;
+            var reminderTime = new Date(reminderTimeInput.value).getTime();
+            var now = new Date().getTime();
+            var timeUntilReminder = reminderTime - now;
+
+            if (timeUntilReminder > 0) {
+                setTimeout(function() {
+                    showReminderPopup(reminderText);
+                }, timeUntilReminder);
+                
+                // Add the reminder to currentUser.reminders
+                if (!currentUser.reminders) currentUser.reminders = [];
+                currentUser.reminders.push({text: reminderText, time: reminderTimeInput.value});
+                
+                alert('Reminder set successfully!');
+                
+                // Clear the input fields
+                reminderInput.value = '';
+                reminderTimeInput.value = '';
+                
+                saveUserData();
+            } else {
+                alert('Please choose a future time for the reminder.');
+            }
+        }
+
+        function showReminderPopup(text) {
+            var popup = document.getElementById('reminderPopup');
+            var reminderText = document.getElementById('reminderText');
+            reminderText.textContent = text;
+            popup.style.display = 'block';
+
+            // Optional: Add a sound notification
+            var audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alert-quick-chime-766.mp3');
+            audio.play();
+        }
+
+        function dismissReminder() {
+            var popup = document.getElementById('reminderPopup');
+            popup.style.display = 'none';
+        }
+
+        // Initialize the class list and load user data when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCalendar();
+            loadUserData();
+            updateClassList();
+            
+            // Add event listener for the close button
+            const modal = document.getElementById('eventModal');
+            const closeBtn = modal.querySelector('.close');
+            closeBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+
+            // Add event listener for clicking outside the modal
+            window.addEventListener('click', function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
